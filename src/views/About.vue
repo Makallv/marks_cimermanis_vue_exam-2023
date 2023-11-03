@@ -3,80 +3,82 @@
     <div class="wrapper-header">
       <h1>ABOUT ME</h1>
       <div class="settings">
-        <button
-            id="btn-edit"
-            @click="toggleEditingForm"
-            :class="{ active: isEditingForm }"
-        >
-          {{ isEditingForm ? "Cancel" : "Edit Form" }}
-        </button>
-        <button
-            id="btn-save"
-            @click="saveForm"
-            v-if="isEditingForm"
-        >
-          Save Form
-        </button>
+        <button id="btn-edit" @click="toggleEdit">{{ editMode ? 'Cancel' : 'Edit Form' }}</button>
+        <button id="btn-save" v-if="editMode" @click="saveForm">Save Form</button>
       </div>
     </div>
     <form>
-      <div class="wrapper-input" v-if="isEditingForm">
+      <div class="wrapper-input">
         <label>NAME</label>
-        <input id="input-name" v-model="user.name" />
+        <input id="input-name" :disabled="!editMode" v-if="editMode" :value="authStore.getUserData().name">
+        <p id="txt-name" v-if="!editMode">{{ authStore.getUserData().name }}</p>
       </div>
-      <div class="wrapper-input" v-if="isEditingForm">
+      <div class="wrapper-input">
         <label>SURNAME</label>
-        <input id="input-surname" v-model="user.surname" />
+        <input id="input-surname" :disabled="!editMode" v-if="editMode" :value="authStore.getUserData().surname">
+        <p id="txt-surname" v-if="!editMode">{{ authStore.getUserData().surname }}</p>
       </div>
-      <div class="wrapper-input" v-if="isEditingForm">
+      <div class="wrapper-input">
         <label>STUDENT CODE</label>
-        <input id="input-code" v-model="user.code" />
+        <input id="input-code" :disabled="!editMode" v-if="editMode" :value="authStore.getUserData().code">
+        <p id="txt-code" v-if="!editMode">{{ authStore.getUserData().code }}</p>
       </div>
       <div class="wrapper-songs">
         <label>FAVORITE SONGS</label>
-        <ul v-if="user.favorite_songs.length > 0">
-          <li v-for="(song, index) in user.favorite_songs" :key="index">
-            <img id="img-album" :src="song.albumPhoto" alt="albumPhoto"/>
+        <ul v-if="favSongs.length > 0">
+          <li v-for="song in favSongs" :key="song.id">
+            <img id="img-album" :src="song.album.images[0].url" />
             <div class="song-info">
-              <p id="txt-song" class="song-name">{{ song.title }}</p>
-              <p id="txt-artist" class="song-artists">{{ song.artists.join(', ') }}</p>
+              <p id="txt-song" class="song-name">{{ song.name }}</p>
+              <p id="txt-artist" class="song-artists">{{ song.artists[0].name }}</p>
             </div>
           </li>
         </ul>
-        <div id="txt-empty" class="empty" v-else>
-          NO SONGS FOUND
-        </div>
+        <div id="txt-empty" class="empty" v-else>NO SONGS FOUND</div>
       </div>
     </form>
   </div>
 </template>
 
 <script>
+import { useAuthStore } from '../stores/auth'
+import songsAPI from '../data/songs'
+import IconEdit from '../components/icons/IconEdit.vue'
+
 export default {
+  name: 'About',
+  components: {
+    IconEdit,
+  },
   data() {
     return {
-      isEditingForm: false,
-      user: {
-        name: "John", // Default value
-        surname: "Smith", // Default value
-        code: "IT1234", // Default value
-        favorite_songs: [
-          // Add your favorite songs here with albumPhoto, title, artists, etc.
-        ],
-      },
+      authStore: useAuthStore(),
+      editMode: false,
     };
   },
   methods: {
-    toggleEditingForm() {
-      this.isEditingForm = !this.isEditingForm;
+    toggleEdit() {
+      this.editMode = !this.editMode;
+      const btnEdit = document.getElementById('btn-edit');
+      if (this.editMode) {
+        btnEdit.classList.add('active');
+      } else {
+        btnEdit.classList.remove('active');
+      }
     },
     saveForm() {
-      this.user.name = this.$refs.inputName.value;
-      this.user.surname = this.$refs.inputSurname.value;
-      this.user.code = this.$refs.inputCode.value;
+      const inputName = document.getElementById('input-name');
+      const inputSurname = document.getElementById('input-surname');
+      const inputCode = document.getElementById('input-code');
 
-      // After saving, disable form editing
-      this.isEditingForm = false;
+      this.authStore.setUserData(inputName.value, inputSurname.value, inputCode.value);
+      this.toggleEdit();
+    },
+  },
+  computed: {
+    favSongs() {
+      const favoriteSongs = this.authStore.getFavoriteSongs();
+      return songsAPI.filter((song) => favoriteSongs.includes(song.id));
     },
   },
 };

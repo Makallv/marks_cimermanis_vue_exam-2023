@@ -19,6 +19,7 @@
 </template>
 
 <script>
+import { useAuthStore } from '@/stores/auth';
 export default {
   data() {
     return {
@@ -33,9 +34,8 @@ export default {
   },
   methods: {
     login() {
-      if (!this.isLoginDisabled) {
-        // Perform login logic here
-      }
+      const authStore = useAuthStore();
+      authStore.authenticate(this.email, this.password);
     },
   },
 };

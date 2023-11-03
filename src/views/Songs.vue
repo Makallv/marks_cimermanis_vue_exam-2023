@@ -1,117 +1,96 @@
 <template>
-  <div id="songs-view" @scroll="handleScroll">
+  <div id="album-view">
     <div class="wrapper-header">
-      <h1>SONGS</h1>
-      <div class="wrapper-search">
-        <input id="input-search" v-model="searchQuery" placeholder="Search by title..." />
-      </div>
-      <div class="wrapper-settings">
-        <button id="btn-show-favorites" @click="toggleShowFavorites">{{ showFavorites ? 'Hide Favorites' : 'Show Favorites' }}</button>
+      <h1>ALBUMS</h1>
+      <div class="settings">
+        <button class="btn btn-secondary" :class="{ active: !is_grid }" @click="is_grid = false">
+          <IconList />
+        </button>
+        <button class="btn btn-secondary" :class="{ active: is_grid }" @click="is_grid = true">
+          <IconGrid />
+        </button>
       </div>
     </div>
-    <div class="wrapper-songs">
-      <table cellpadding="0" cellspacing="0">
-        <tr>
-          <th id="th-id">#</th>
-          <th id="th-title" @click="sortBy('title')">
-            Title
-            <IconCaretUp v-if="sortKey === 'title' && !sortOrder" />
-            <IconCaretDown v-if="sortKey === 'title' && sortOrder" />
-          </th>
-          <th id="th-artist">Artist</th>
-          <th id="th-album">Album</th>
-          <th id="th-duration" @click="sortBy('length')">
-            Duration
-            <IconCaretUp v-if="sortKey === 'length' && !sortOrder" />
-            <IconCaretDown v-if="sortKey === 'length' && sortOrder" />
-          </th>
-        </tr>
-        <!-- Loop through songs -->
-        <tr class="song" v-for="(song, index) in filteredSongs" :key="song.id">
-          <td id="td-index">
-            <IconPlay @dblclick="playSong(index)" />
-            <span id="txt-index">{{ index + 1 }}</span>
-          </td>
-          <td id="td-title">
-            <img :src="song.albumPhoto" alt="Album Photo" />
-            {{ song.title }}
-            <IconHeart @click="toggleFavorite(song.id)" :class="{ favorite: isFavorite(song.id) }" />
-          </td>
-          <td id="td-artist">{{ song.artists.join(', ') }}</td>
-          <td id="td-album">{{ song.album }}</td>
-          <td id="td-duration">{{ formatDuration(song.length) }}</td>
-        </tr>
-      </table>
-    </div>
+    <ul id="list-albums" :class="{ grid: is_grid }">
+      <li class="album" li v-for="(album, album_id) in albums" :key="album_id" @click="selectAlbum(album)"
+          :class="{ active: album.id === playerStore.getNowPlayingAlbumID }">
+        <img id="img-album" :src="album.images[0].url" />
+        <div class="album-info">
+          <h4 id="txt-album-name">{{ album.name }}</h4>
+          <p id="txt-album-artists">{{ getAlbumArtists(album) }}</p>
+          <div class="album-year">
+            <p id="txt-album-year">{{ getAlbumYear(album) }}</p>
+            <p id="txt-album-tracks">{{ getAlbumTrackCount(album) }} {{ getAlbumTrackCount(album) > 1 ? 'songs' : 'song' }} </p>
+          </div>
+        </div>
+      </li>
+    </ul>
   </div>
 </template>
 
 <script>
-import songData from '@/data/songs.js'
+import IconGrid from '../components/icons/IconGrid.vue'
+import IconList from '../components/icons/IconList.vue'
+import songsAPI from '../data/songs'
+import { usePlayerStore } from '@/stores/player'
+
 export default {
+  name: 'Albums',
+  components: { IconGrid, IconList },
   data() {
     return {
-      songs: [...songData],
-      sortKey: null,
-      sortOrder: false,
-      searchQuery: '',
-      showFavorites: false,
-      favorites: [],
-    };
-  },
-  computed: {
-    filteredSongs() {
-      let songs = [...this.songs];
-
-      if (this.searchQuery) {
-        songs = songs.filter(song => song.title.toLowerCase().includes(this.searchQuery.toLowerCase()));
-      }
-
-      if (this.showFavorites) {
-        songs = songs.filter(song => this.isFavorite(song.id));
-      }
-
-      if (this.sortKey) {
-        songs = songs.sort((a, b) => {
-          const keyA = a[this.sortKey];
-          const keyB = b[this.sortKey];
-          return this.sortOrder ? keyA.localeCompare(keyB) : keyB.localeCompare(keyA);
-        });
-      }
-
-      return songs;
-    },
+      is_grid: true,
+      playerStore: usePlayerStore(),
+      doubleClick: 0,
+    }
   },
   methods: {
-    sortBy(key) {
-      if (key === this.sortKey) {
-        this.sortOrder = !this.sortOrder;
+    selectAlbum(album) {
+      if (this.lastClicked !== album) {
+        this.doubleClick = 0;
+        this.lastClicked = album;
+      }
+      this.doubleClick++;
+      if (this.doubleClick === 1) {
+        this.timer = setTimeout(() => {
+          this.doubleClick = 0;
+        }, 500);
       } else {
-        this.sortKey = key;
-        this.sortOrder = false;
+        clearTimeout(this.timer);
+        this.playerStore.setPlaylist(album.tracks);
+        this.playerStore.setNowPlaying(album.tracks[0]);
+        this.doubleClick = 0;
       }
     },
-    toggleFavorite(songId) {
-      if (this.isFavorite(songId)) {
-        this.favorites = this.favorites.filter(id => id !== songId);
-      } else {
-        this.favorites.push(songId);
-      }
+    getAlbumTrackCount(album) {
+      return album.tracks.length;
     },
-    isFavorite(songId) {
-      return this.favorites.includes(songId);
+    getAlbumYear(album) {
+      return album.release_date.split('-')[0]
     },
-    playSong(index) {
-      // Implement your audio playback logic here
-    },
-    formatDuration(duration) {
-      const minutes = Math.floor(duration / 60);
-      const seconds = duration % 60;
-      return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-    },
-    toggleShowFavorites() {
-      this.showFavorites = !this.showFavorites;
+    getAlbumArtists(album) {
+      return album.artists.map((artist) => artist.name).join(', ')
     },
   },
-};
+  computed: {
+    albums() {
+      const songs = songsAPI || []
+      const albums = {}
+      songs.forEach((song) => {
+        if (!albums[song.album.id]) {
+          albums[song.album.id] = {
+            id: song.album.id,
+            name: song.album.name,
+            images: song.album.images,
+            artists: song.album.artists,
+            release_date: song.album.release_date,
+            tracks: []
+          }
+        }
+        albums[song.album.id].tracks.push(song)
+      })
+      return albums
+    },
+  },
+}
 </script>

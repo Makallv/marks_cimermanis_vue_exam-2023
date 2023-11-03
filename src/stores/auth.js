@@ -1,27 +1,17 @@
-import { defineStore } from 'pinia';
+import { defineStore } from 'pinia'
+import router from '@/router'
 
-export const useAuthStore = defineStore('auth', {
+export const useAuthStore = defineStore({
+    id: 'auth',
     state: () => ({
-        authenticated: false,
         user: {
             name: 'Marks',
             surname: 'Cimermanis',
             code: 'IT21060',
             favorite_songs: [],
         },
+        authenticated: localStorage.getItem('is_authenticated') || false,
     }),
-    getters: {
-        isAuthenticated() {
-            return this.authenticated;
-        },
-        getFavoriteSongs() {
-            return this.user.favorite_songs;
-        },
-        is_authenticated() {
-            const localStorageValue = localStorage.getItem('is_authenticated');
-            return localStorageValue ? JSON.parse(localStorageValue) : this.authenticated;
-        },
-    },
     actions: {
         setUserData(name, surname, code) {
             this.user.name = name;
@@ -29,29 +19,45 @@ export const useAuthStore = defineStore('auth', {
             this.user.code = code;
         },
         authenticate(email, password) {
-            const yourEmail = 'marks.cimermanis@va.lv';
-            const yourPassword = '123456';
-
-            if (email === yourEmail && password === yourPassword && password.length >= 6) {
-                this.authenticated = true;
+            if (email === 'marks.cimermanis@va.lv' && password === '123456') {
                 localStorage.setItem('is_authenticated', true);
-                // Change the router address programmatically to '/' using your router library
+                this.authenticated = true;
+                router.push({ name: 'Songs' });
+            } else {
+                alert('Wrong email or password!');
             }
         },
         logout() {
-            localStorage.clear();
+            localStorage.clear()
             this.authenticated = false;
-            // Change the router address programmatically to '/login' using your router library
+            location.reload();
         },
+        //Since there are duplicate ids in the songs.json file it would be better off saving it as a name instead of id where this command gets used.
+        //Due to requirements though, I end up using ids. To use names instead, everywhere where the command is used, replace song.id with song.name.
+        //Since this command simply saves just an array of something, doesnt matter if its ids or names, it will work.
         toggleFavorite(songID) {
-            const index = this.user.favorite_songs.indexOf(songID);
+            const index = this.user.favorite_songs.indexOf(songID)
             if (index === -1) {
                 this.user.favorite_songs.push(songID);
             } else {
                 this.user.favorite_songs.splice(index, 1);
             }
-
             localStorage.setItem('favorite_songs', JSON.stringify(this.user.favorite_songs));
         },
+        getFavoriteSongs() {
+            const favorite_songs = localStorage.getItem('favorite_songs');
+            if (favorite_songs) {
+                this.user.favorite_songs = JSON.parse(favorite_songs);
+            }
+            return this.user.favorite_songs;
+        },
+        getUserData() {
+            return this.user;
+        }
     },
-});
+    getters: {
+        is_authenticated() {
+            return localStorage.getItem('is_authenticated') || this.authenticated;
+        },
+    },
+})

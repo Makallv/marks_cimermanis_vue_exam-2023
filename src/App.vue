@@ -1,41 +1,40 @@
 <template>
-  <div>
-    <!-- HEADER -->
-    <Header v-if="isLoggedIn"/>
-    <!-- HEADER END -->
-
-    <!-- BODY -->
-    <div id="section-body">
-      <NavigationComponent v-if="isLoggedIn"/>
-      <router-view className="section-router" v-if="isLoggedIn"/>
-    </div>
-    <!-- BODY END -->
-
-    <!-- PLAYER -->
-    <div id="section-player" v-if="isLoggedIn">
-      <AudioPlayer/>
-    </div>
-    <!-- PLAYER END -->
+  <Header v-if="is_authenticated"></Header>
+  <div id="section-body">
+    <NavigationComponent v-if="is_authenticated" />
+    <router-view class="section-router"></router-view>
+  </div>
+  <div id="section-player" v-if="is_authenticated">
+    <AudioPlayer />
   </div>
 </template>
 
 <script>
-import Header from '@/components/HeaderComponent.vue';
-import AudioPlayer from '@/components/AudioPlayerComponent.vue';
-import NavigationComponent from '@/components/NavigationComponent.vue';
-import router from "@/router";
-router.push('/login')
+import Header from '@/components/HeaderComponent.vue'
+import AudioPlayer from '@/components/AudioPlayerComponent.vue'
+import NavigationComponent from '@/components/NavigationComponent.vue'
+import { useAuthStore } from '@/stores/auth'
+import { watchEffect } from 'vue'
 
 export default {
   components: {
-    NavigationComponent,
     Header,
     AudioPlayer,
+    NavigationComponent,
   },
-  data() {
+  setup() {
+    const authStore = useAuthStore()
+    const is_authenticated = authStore.is_authenticated
+    watchEffect(() => {
+      const isAuthenticated = authStore.is_authenticated
+      if (isAuthenticated !== is_authenticated) {
+        location.reload()
+      }
+    })
+
     return {
-      isLoggedIn: false, // Set this to true if the user is logged in, otherwise keep it as false
-    };
+      is_authenticated,
+    }
   },
-};
+}
 </script>

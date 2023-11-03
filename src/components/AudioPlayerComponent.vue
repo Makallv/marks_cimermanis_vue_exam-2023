@@ -91,7 +91,10 @@ export default {
 </script>
 
 <template>
-    <div id="audio-player">
+  <div class="volume-meter">
+    <canvas id="volume-canvas" width="100" height="10"></canvas>
+  </div>
+  <div id="audio-player">
         <audio ref="audio" preload>
             <source :src="song_preview" type="audio/mpeg" />
         </audio>

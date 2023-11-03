@@ -1,49 +1,51 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
+import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
+import login from '../views/Login.vue'
+import songs from '../views/Songs.vue'
+import albums from '../views/Albums.vue'
+import about from '../views/About.vue'
+
+// ENG
+// Middleware is a function that is executed before the route is changed
+// argument "to" stores the address where we want to navigate/go
+// argument "from" stores the address from where we're coming from
 
 const router = createRouter({
     history: createWebHistory(),
     routes: [
         {
+            path: '/login',
+            name: 'Login',
+            component: login,
+        },
+        {
             path: '/',
             name: 'Songs',
-            component: () => import('../views/Songs.vue')
+            component: songs,
         },
         {
             path: '/albums',
             name: 'Albums',
-            component: () => import('../views/Albums.vue')
+            component: albums,
         },
         {
             path: '/about',
             name: 'About',
-            component: () => import('../views/About.vue')
+            component: about,
         },
-        {
-            path: '/login',
-            name: 'Login',
-            component: () => import('../views/Login.vue')
-        }
-    ]
-});
+    ],
+})
 
-// Create a beforeEach navigation guard
 router.beforeEach((to, from, next) => {
-    const isAuthenticated = useAuthStore().isAuthenticated;
-
-    if (to.path === '/login') {
-        if (isAuthenticated) {
-            next({ path: '/' }); // Redirect to the home route if already authenticated
-        } else {
-            next(); // Allow access to /login if not authenticated
-        }
+    const authStore = useAuthStore()
+    const is_authenticated = authStore.is_authenticated
+    if (to.path !== '/login' && !is_authenticated) {
+        next('/login')
+    } else if (to.path === '/login' && is_authenticated) {
+        next('/')
     } else {
-        if (!isAuthenticated) {
-            next({ path: '/login' }); // Allow access to other routes if authenticated
-        } else {
-            next(); // Redirect to the login route if not authenticated
-        }
+        next()
     }
-});
+})
 
 export default router;

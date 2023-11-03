@@ -40,7 +40,7 @@ export const usePlayerStore = defineStore('player', {
         },
         getNowPlayingSongPreview() {
             return this.now_playing?.preview_url;
-        }
+        },
     },
     actions: {
         setPlaylist(songs) {
