@@ -1,42 +1,41 @@
 <template>
-    <!--  HEADER  -->
-    <Header></Header>
-    <!--  HEADER END  -->
+  <div>
+    <!-- HEADER -->
+    <Header v-if="isLoggedIn"/>
+    <!-- HEADER END -->
 
-    <!--  BODY  -->
+    <!-- BODY -->
     <div id="section-body">
-        <nav id="nav-main" class="wrapper-navigation">
-            <ol>
-                <li>
-                    <a href="/">SONGS</a>
-                </li>
-                <li>
-                    <a href="/albums">ALBUMS</a>
-                </li>
-                <li>
-                    <a href="/about">ABOUT</a>
-                </li>
-            </ol>
-        </nav>
-        <router-view class="section-router"></router-view>
+      <NavigationComponent v-if="isLoggedIn"/>
+      <router-view className="section-router" v-if="isLoggedIn"/>
     </div>
-    <!--  BODY END  -->
+    <!-- BODY END -->
 
-    <!--  PLAYER  -->
-    <div id="section-player">
-        <AudioPlayer />
+    <!-- PLAYER -->
+    <div id="section-player" v-if="isLoggedIn">
+      <AudioPlayer/>
     </div>
-    <!--  PLAYER END  -->
+    <!-- PLAYER END -->
+  </div>
 </template>
 
 <script>
-    import Header from '@/components/HeaderComponent.vue';
-    import AudioPlayer from '@/components/AudioPlayerComponent.vue';
+import Header from '@/components/HeaderComponent.vue';
+import AudioPlayer from '@/components/AudioPlayerComponent.vue';
+import NavigationComponent from '@/components/NavigationComponent.vue';
+import router from "@/router";
+router.push('/login')
 
-    export default {
-        components: {
-            Header,
-            AudioPlayer
-        }
-    }
+export default {
+  components: {
+    NavigationComponent,
+    Header,
+    AudioPlayer,
+  },
+  data() {
+    return {
+      isLoggedIn: false, // Set this to true if the user is logged in, otherwise keep it as false
+    };
+  },
+};
 </script>
